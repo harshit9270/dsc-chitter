@@ -349,8 +349,8 @@ app.get('/home', (req, res) => {
                                 followUsers.splice(i, 1);
                             }
                             for (let j = 0; j < data[0].following.length; j++) {
-                                if (followUsers.length != 0) {
-                                    console.log(followUsers, "followUsers");
+                                if (followUsers[i] != undefined) {
+                                    console.log(followUsers[i], "followUsers[i");
                                     if (followUsers[i].username == data[0].following[j]) {
                                         followUsers.splice(i, 1);
                                     }
