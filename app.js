@@ -10,7 +10,7 @@ const { time } = require('console');
 const { getMaxListeners, features } = require('process');
 const ejs = require("ejs");
 var url = require('url');
-
+const cloudinary = require('cloudinary').v2;
 
 // Auth dependencies
 
@@ -32,7 +32,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.urlencoded({
     extended: true
 }));
-app.use(bodyParser.json());
+app.use(express.json({ limit: '50mb' }));
+
+// cloudinary configuration
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 
 // Setting up view-engine to EJS
@@ -143,7 +151,7 @@ app.post("/register", function (req, res) {
     }
     // if false
     else {
-        req.body.following = ["req.body.username"];
+        req.body.following = [req.body.username];
         let userdetails = new UserDetails(req.body);
         userdetails.save();
 
@@ -190,6 +198,10 @@ app.post("/newtweet", (req, res) => {
     // check if user is authenticated or not
     if (req.isAuthenticated()) {
         console.log(req.user);
+        console.log(req.body.hiddenImgUrl ,"req.body.hiddenImgUrl");
+        if (req.body.hiddenImgUrl != "") {
+            req.body.tweetInput = `<img src= ${req.body.hiddenImgUrl} alt="tweet" style="width: 75%;height: auto;margin: 15px auto;" //> <br/>` + req.body.tweetInput;
+        }
         let myuserTweet = new userTweet(req.body);
         myuserTweet.save();
         res.send("Your Tweet Saved");
@@ -433,8 +445,22 @@ app.get("/getTweet", (req, res) => {
     userTweet.find({}, (err, data) => {
         if (err) console.log(err);
         else {
-            console.log(data);
-            res.send(data);
+            UserDetails.find({ username: req.user.username }, (err, userData) => {
+                if (err)
+                    console.log(err);
+                else {
+                    var temp = [];
+                    for (let i = 0; i < data.length; i++) {
+                        for (let j = 0; j < userData[0].following.length; j++) {
+                            if (data[i].email == userData[0].following[j]) {
+                               temp.push(data[i]);
+                            }
+                        }
+                    }
+                    console.log(temp , "temp");
+                    res.send(temp);
+                }
+            });
         }
     })
 })
